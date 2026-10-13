@@ -847,6 +847,8 @@ input::placeholder {
 .stock-select select {
   appearance: none;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   border: 0;
   border-radius: 4px;
   padding: 8px 22px 8px 0;
@@ -854,6 +856,14 @@ input::placeholder {
   font-size: var(--text-sm);
   font-weight: 600;
   min-height: 36px;
+}
+.selected-stock-name {
+  margin: 6px 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .stock-select svg {
   position: absolute;

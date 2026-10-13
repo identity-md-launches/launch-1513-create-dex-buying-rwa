@@ -1,0 +1,73 @@
+[
+  {
+    "name": "select overflow at 320",
+    "pass": true,
+    "detail": {
+      "before": [
+        320,
+        320
+      ],
+      "after": {
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "scrollX": 0,
+        "containerClient": 218,
+        "containerScroll": 218,
+        "optionText": "TSMon",
+        "optionLabel": "TSMon",
+        "selectedName": "Taiwan Semiconductor (TSMC)",
+        "bodyOverflowX": "visible",
+        "htmlOverflowX": "visible"
+      }
+    }
+  },
+  {
+    "name": "select overflow at 390",
+    "pass": true,
+    "detail": {
+      "before": [
+        390,
+        390
+      ],
+      "after": {
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "scrollX": 0,
+        "containerClient": 288,
+        "containerScroll": 288,
+        "optionText": "TSMon",
+        "optionLabel": "TSMon",
+        "selectedName": "Taiwan Semiconductor (TSMC)",
+        "bodyOverflowX": "visible",
+        "htmlOverflowX": "visible"
+      }
+    }
+  },
+  {
+    "name": "copied state resets on stock change",
+    "pass": true,
+    "detail": {
+      "copiedLabel": "Stock token address copied",
+      "after": {
+        "address": "0x14c3abf95cb9c93a8b82c1cdcb76d72cb87b2d4c",
+        "label": "Copy stock token address"
+      }
+    }
+  },
+  {
+    "name": "failed reads are explicit",
+    "pass": true,
+    "detail": {
+      "loadedExcerpt": "Connected wallet\n0x1111111111111111111111111111111111111111\nRefresh balances\nAvailable IMD\nUnavailable\nStocks held\n0\nPurchases in loaded history\n0\nStock balances\nExport CSV\nNo stock balances found\n\nBa",
+      "failed": {
+        "text": "Connected wallet\n0x1111111111111111111111111111111111111111\nRefresh balances\nAvailable IMD\nUnavailable\nStocks held\nUnavailable\nPurchases in loaded history\nUnavailable\n\nThe network could not complete this request. Check your connection and try again.\n\nStock balances\nExport CSV\nStock balances unavailable. Refresh to retry.\n\nThe balance read did not complete, so no holdings are shown.\n\nRetry balances\nPurchase activity\nOnchain history\nThe network could not complete this request. Check your connection and try again.Retry history",
+        "refreshEnabled": true,
+        "summary": [
+          "Unavailable",
+          "Unavailable",
+          "Unavailable"
+        ]
+      }
+    }
+  }
+]

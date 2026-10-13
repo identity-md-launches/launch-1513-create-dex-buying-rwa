@@ -2,6 +2,8 @@
 
 Status: **Complete for the stated website scope.** Checks below were run by the worker on 2026-10-13. They are not independent certification. No contract was deployed, initialized, upgraded or changed, and no real wallet transaction was signed or sent.
 
+A revision later on 2026-10-13 answered four reopened findings from an independent reviewer. The [revision section](#revision-reopened-findings) records what was reproduced, what changed, and the checks rerun on the rebuilt export. Earlier sections describe the first round and remain accurate except where that section says otherwise.
+
 ## Scope and assumptions
 
 The implementation extends the existing Solidity project with a Vite/React/TypeScript site in `web/` and a production static export in `dist/`. The supplied 50-stock catalog is preserved. Native browser wallets, IMD-only purchases, indicative prices, automatic quote renewal, owner-configured routes, a user portfolio and automatic `configVersion` synchronization are implemented.
@@ -108,8 +110,10 @@ All reproduced applicable high/medium findings above were fixed. No unresolved a
 
 The screenshots below were made from the final production export with live RPC reads, without a mock wallet. Both were opened and visually inspected. Their quotes are observations at capture time only.
 
-- [390 × 844 mobile first screen](docs/website-validation/mobile-390.png): product, stock selector, IMD amount and primary action visible; action bottom measured at 618.17px.
+- [390 × 844 mobile first screen](docs/website-validation/mobile-390.png): product, stock selector with its company name line, IMD amount and primary action visible; action bottom measured at 643.77px after the revision (618.17px in the first round).
 - [1440 × 1000 desktop first screen](docs/website-validation/desktop-1440.png): catalog, price availability, quote form and network state visible.
+
+Both screenshots were retaken from the revised export on 2026-10-13 with live RPC reads; the browser reported no console warnings, errors or failed resource responses during either capture.
 
 Additional 320/768/1024, keyboard, empty-state, stress and mocked-flow screenshots were inspected or generated in `test/scratch/`; those disposable test files are not packaged as deliverables.
 
@@ -122,6 +126,34 @@ Additional 320/768/1024, keyboard, empty-state, stress and mocked-flow screensho
 - Public RPC reads and wallet access require connectivity. The shell, catalog, local watchlist and error recovery render offline; real balances and quotes do not.
 - Static metadata includes all requested fields and a local PNG. A final host is not known in this assignment, so the publisher may need an absolute share-image URL for strict crawlers. No hosting or publishing was performed.
 - Screen readers, physical devices, native browser zoom and exhaustive localization were not tested. The guide's unperformed optional checks are recorded rather than labeled passed.
+- The reviewer's WebKit page-widening behaviour for long `<option>` text did not reproduce in the WebKit build available here. The fix removes long option text altogether, so the behaviour cannot recur, but that engine difference was not observed first-hand.
+
+## Revision: reopened findings
+
+An independent reviewer reopened the accepted work with one high and three advisory findings. Each was reproduced against the committed export before any source changed, using a scratch Playwright script (`test/scratch/repro.mjs`, removed before submission) that serves `dist/` from a `/preview/` subpath, blocks or intercepts all external traffic, and injects a test-only EIP-1193/EIP-6963 provider for the portfolio case. Browsers were Chromium 155.0.8059.12 and WebKit 26.6 (Playwright build 2368). WebKit's missing host libraries were installed with `playwright install-deps webkit` outside the repository.
+
+| Finding | Reproduction on the previous export | Change | Recheck on the rebuilt export |
+| --- | --- | --- | --- |
+| High: long stock options clip and, in the reviewer's WebKit, widen the page at 320px (`web/src/Trade.tsx:595`) | Clipping reproduced in both engines: the selected option “Taiwan Semiconductor (TSMC) · TSMon” measured 301.9px in Chromium and 274.2px in WebKit against 196px of text space, visibly cut at “(TSM”. The page-level overflow did not reproduce in this machine's WebKit 26.6: after selecting TSMC, `scrollWidth` stayed 320, `scrollX` stayed 0 and `.stock-select` measured 218/218. The reviewer's 274px container scroll width equals the WebKit text width measured here, so their engine laid the control out at its longest option's intrinsic width. | Options now show the symbol only, with the full name kept in each option's `aria-label` (`web/src/Trade.tsx:599`). The selected company name renders in a wrapping line beneath the control (`web/src/Trade.tsx:608`, `.selected-stock-name` in `web/src/style.css:860`), linked by `aria-describedby`. The select itself gets `min-width: 0; max-width: 100%` (`web/src/style.css:850`). No page overflow is hidden. The output line still shows the unit. | Chromium and WebKit, 320 × 700 and 390 × 844: after selecting TSMC, document `scrollWidth` equals `clientWidth`, `scrollX` is 0 after `window.scrollTo(1000, 0)`, the container has no scroll overflow, the option text is `TSMon`, its label is the full name, and the name line reads “Taiwan Semiconductor (TSMC)”. Longest option text is now six characters, so no option can exceed the control. |
+| Medium: failed portfolio reads looked like an empty portfolio (`web/src/Dashboard.tsx:252`) | Reproduced in both engines with the reviewer's steps (test account on chain 1, loaded reads, then aborted RPC and Refresh balances). The old export showed “No stock balances found”, an enabled Explore stocks action and “Loading…” in both counts after the requests had failed. | Holdings failures have their own state (`web/src/Dashboard.tsx:36`). The empty state renders only after a successful holdings response with no owned tokens (`web/src/Dashboard.tsx:271`); a failed read shows “Stock balances unavailable. Refresh to retry.” with a Retry balances control (`web/src/Dashboard.tsx:286`). Stocks held and Purchases in loaded history show “Unavailable” when their request failed, and Available IMD shows “Loading…” only while its read is in flight (`web/src/Dashboard.tsx:183`). Existing Refresh balances and Retry history controls are unchanged. | Both engines: after the aborted refresh, Refresh balances is enabled, all three summary counts read “Unavailable”, the balances section reads “Stock balances unavailable. Refresh to retry.”, and no empty-portfolio or loading label remains. The successful-read path still shows the empty state with its counts at 0. |
+| Medium: the Markets subtitle was a slogan (`web/src/App.tsx:165`) | Confirmed by inspection and in the 390 and 1440 renders: “The companies you know. In the wallet you own.” under the heading. | Replaced with “Buy stock tokens with IMD on Ethereum.” (`web/src/App.tsx:165`). Heading, type scale and spacing are unchanged. | Taste copy budget reports 14 prose words on the first screen at 390 and 7 at 1440; the tagline check still passes. Both screenshots show the new line. |
+| Low: copied-address feedback persisted after selecting another stock (`web/src/components.tsx:52`) | Reproduced in Chromium with clipboard permissions: after copying NVIDIA's token address and selecting AAPLon, the Apple address showed the check icon and “Stock token address copied”. | `AddressDisplay` keys its copied and error state to the address it was produced for (`web/src/components.tsx:53`), so a new address starts uncopied without an effect or a key change at call sites. | Chromium: after the same steps the Apple address shows “Copy stock token address”. WebKit was not used for this case because the headless clipboard permission is Chromium-only. |
+
+Commands run for the revision, from the repository root, with dependencies installed under `/tmp` and a temporary `web/node_modules` symlink that is removed before submission:
+
+| Command / check | Result |
+| --- | --- |
+| `npm ci --prefix /tmp/imd-frontend` from the delivered manifest and lockfile | Exit 0; lockfile unchanged. |
+| `npm --prefix web run typecheck` | Exit 0 (`tsc --noEmit`). |
+| `npm --prefix web run build` | Exit 0. Vite output: HTML 1.41kB, CSS 30.03kB, JS chunks 11.79kB / 258.91kB / 261.23kB. |
+| `node test/scratch/repro.mjs dist` (Chromium) | Exit 0; 4/4 revision checks pass. Before the change, 2/4 failed (dashboard and copied state) and the select check passed only because Chromium does not widen the control. |
+| `TEST_ENGINE=webkit node test/scratch/repro.mjs dist` | Exit 0; 3/3 applicable checks pass. |
+| `IMD_PLAYWRIGHT=/usr/lib/node_modules/@playwright/mcp/node_modules/playwright/index.mjs node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste` | Exit 0; 16/16 checks pass on the rebuilt export; no horizontal scroll at 320, 390 or 1440; 390 screenshot inspected: product, selector, name line, amount and primary action on the first screen. |
+| Live screenshots at 390 × 844 and 1440 × 1000 | Captured from the rebuilt export; main action bottom 643.77px at 390; scroll width equals viewport width; 0 console warnings/errors; 0 failed responses. |
+
+Results are saved as [revision-checks-chromium.json](docs/website-validation/revision-checks-chromium.json), [revision-checks-webkit.json](docs/website-validation/revision-checks-webkit.json) and the updated [taste summary](docs/website-validation/taste.json). The first-round 15-scenario interaction suite, axe scan and stress checks were not rerun in this revision: their scratch harnesses were removed with the first submission, and the saved first-round results describe the earlier export. The revision changed the selector markup, dashboard failure states, one subtitle and copy feedback; it did not change wallet, quote, approval or purchase code paths.
+
+Better Interface review of the changed surfaces: the native select keeps its label and now has an accessible description; the name line uses the existing small body size and muted color, which is the declared 4.5:1-or-better pair; the dashboard failure state uses `role="status"`, names the action, and does not claim zero; the subtitle uses task language. No new type size, color or component class beyond `.selected-stock-name` was introduced. Rendered checks for these changes are the probe and screenshots above; no screen-reader session was run.
 
 ## Packaging
 

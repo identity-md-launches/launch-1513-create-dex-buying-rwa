@@ -586,19 +586,28 @@ export function Trade({
             <select
               id="receive-stock"
               value={stock.symbol}
+              aria-describedby="receive-stock-name"
               onChange={(e) =>
                 onSelect(stocks.find((s) => s.symbol === e.target.value)!)
               }
             >
+              {/* Short visible text keeps the control within narrow layouts; the full name stays in the accessible label and the line below. */}
               {stocks.map((s) => (
-                <option value={s.symbol} key={s.symbol}>
-                  {s.name} · {s.symbol}
+                <option
+                  value={s.symbol}
+                  key={s.symbol}
+                  aria-label={`${s.name} · ${s.symbol}`}
+                >
+                  {s.symbol}
                 </option>
               ))}
             </select>
             <ChevronDown size={16} aria-hidden="true" />
           </div>
         </div>
+        <p id="receive-stock-name" className="selected-stock-name">
+          {stock.name}
+        </p>
         <div className="output-line">
           <span
             className={`output numeric ${quote ? "" : "quiet"}`}

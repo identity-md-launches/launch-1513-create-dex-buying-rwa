@@ -1,11 +1,11 @@
 {
-  "at": "2026-10-13T10:43:09.232Z",
+  "at": "2026-10-13T11:18:00.310Z",
   "checks": [
     {
       "name": "render",
       "passed": true,
       "exitCode": 0,
-      "durationMs": 12120,
+      "durationMs": 16120,
       "output": "renders, no script errors or missing local files\nexternal hosts: ethereum-rpc.publicnode.com"
     },
     {
@@ -26,7 +26,7 @@
       "name": "contrast",
       "passed": true,
       "exitCode": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "output": "all measured text meets 4.5:1 (3:1 large)"
     },
     {
@@ -47,7 +47,7 @@
       "name": "eyebrows",
       "passed": true,
       "exitCode": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "output": "no kicker labels above headings"
     },
     {
@@ -55,7 +55,7 @@
       "passed": true,
       "exitCode": 0,
       "durationMs": 1,
-      "output": "390: 5 sizes in use, 5 with one-offs (12px\u00d763, 14px\u00d727, 16px\u00d710, 20px\u00d74, 28px\u00d72)\n1440: 4 sizes in use, 6 with one-offs (12px\u00d777, 14px\u00d733, 16px\u00d721, 20px\u00d74, 28px\u00d71, 36px\u00d71)\nbar: 6 sizes used more than once, 8 counting one-offs, per width"
+      "output": "390: 5 sizes in use, 5 with one-offs (12px×63, 14px×28, 16px×10, 20px×4, 28px×2)\n1440: 4 sizes in use, 6 with one-offs (12px×77, 14px×34, 16px×21, 20px×4, 28px×1, 36px×1)\nbar: 6 sizes used more than once, 8 counting one-offs, per width"
     },
     {
       "name": "type-faces",
@@ -90,7 +90,7 @@
       "passed": true,
       "exitCode": 0,
       "durationMs": 0,
-      "output": "prose on the first screen: 16 words at 390 (bar 60), 9 at 1440 (bar 90)\nall words on the first screen: 70 at 390, 129 at 1440\nwhole page: 255 words, 62 of them prose"
+      "output": "prose on the first screen: 14 words at 390 (bar 60), 7 at 1440 (bar 90)\nall words on the first screen: 67 at 390, 124 at 1440\nwhole page: 254 words, 60 of them prose"
     },
     {
       "name": "chrome",
@@ -111,7 +111,7 @@
       "passed": true,
       "exitCode": 0,
       "durationMs": 0,
-      "output": "title \"IMD Stocks \u2014 Buy tokenized stocks with IMD\", favicon, og:title, og:image, description"
+      "output": "title \"IMD Stocks — Buy tokenized stocks with IMD\", favicon, og:title, og:image, description"
     }
   ]
 }

@@ -162,7 +162,7 @@ export default function App() {
                 ? "Your balances and purchases, directly from Ethereum."
                 : page === "watchlist"
                   ? "Follow the stocks you care about. Saved on this device."
-                  : "The companies you know. In the wallet you own."}
+                  : "Buy stock tokens with IMD on Ethereum."}
             </p>
           </div>
           <button

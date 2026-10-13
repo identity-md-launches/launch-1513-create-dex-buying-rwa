@@ -45,7 +45,7 @@ The system stack is `ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI
 
 Weights are 400 and 600. Body line height is 1.5; page headings use 1.15, section headings 1.3, small headings 1.4, and longer modal explanations 1.65. Page headings track at `-.04em`, section headings at `-.02em`; content uses natural tracking and sentence case. Headings use balanced wrapping. Prices, countdowns and balances use tabular numerals.
 
-At widths up to 37rem, search, stock selection, sector selection and slippage controls use 16px type. Long names wrap in the stock table. Addresses wrap with `overflow-wrap: anywhere` and remain selectable and copyable. The header uses a compact wallet address with the complete address available in its wallet dialog. Quote previews are abbreviated for legibility; the transaction review shows exact decimal amounts.
+At widths up to 37rem, search, stock selection, sector selection and slippage controls use 16px type. The stock selector shows only the symbol as option text; the selected company name sits in a wrapping 14px muted line beneath it (`.selected-stock-name`), so no option can widen the control. Long names wrap in the stock table. Addresses wrap with `overflow-wrap: anywhere` and remain selectable and copyable. The header uses a compact wallet address with the complete address available in its wallet dialog. Quote previews are abbreviated for legibility; the transaction review shows exact decimal amounts.
 
 ## Layout
 
@@ -60,7 +60,7 @@ The spacing scale is 4, 8, 12, 16, 20, 24, 32, 40 and 48px, exposed as `--space-
 | 54rem / 864px | Trade moves above catalog in one column; pay and receive fields sit side by side; featured stocks return to four columns; full table columns return where space allows |
 | 37rem / 592px | Gutters become 16px; header navigation gets a second row; pay/receive stack; featured stocks use two columns; table hides rank and availability while preserving stock, price and watchlist actions |
 
-At 390 × 844 the title, amount, stock selector and primary wallet action are visible without scrolling. Rendered reflow was tested at 320, 390, 768, 1024 and 1440px. Additional checks cover 200% root text enlargement, an RTL mirror, and forced colors at 1440px. These are not physical-device or browser-native zoom tests.
+At 390 × 844 the title, its one-line task description, amount, stock selector with its name line and primary wallet action are visible without scrolling (action bottom 643.77px). Rendered reflow was tested at 320, 390, 768, 1024 and 1440px. Additional checks cover 200% root text enlargement, an RTL mirror, and forced colors at 1440px. These are not physical-device or browser-native zoom tests.
 
 ## Elevation & Depth
 
@@ -75,10 +75,10 @@ Buttons and search fields use 8px corners, feature buttons 10px, trade input gro
 ## Components
 
 - `App.tsx`: shared header, hash navigation, market summary, help and wallet content. The brand links to Markets; `aria-current` identifies the current view. The skip link focuses the current main content without changing the hash route.
-- `Trade.tsx`: amount, native stock selector, settings, quote countdown, fees, expandable route, transaction review and persistent transaction state. Default slippage is 0.5%, with 0.1%, 1% and 3% alternatives. Quote expiry and owner configuration changes invalidate a review. Disabling automatic refresh preserves the current quote until it expires; explicit refresh is always available.
+- `Trade.tsx`: amount, native stock selector (symbol options with the full name in each option's accessible label and in a described name line below), settings, quote countdown, fees, expandable route, transaction review and persistent transaction state. Default slippage is 0.5%, with 0.1%, 1% and 3% alternatives. Quote expiry and owner configuration changes invalidate a review. Disabling automatic refresh preserves the current quote until it expires; explicit refresh is always available.
 - `MarketList.tsx`: search by name, symbol or address, native sector selection, availability filters, catalog/name sorting, ten-row pagination and watchlist stars. Empty search results have a clear-filter action. Unlisted tokens remain in the catalog and show unavailable prices. `FeaturedStocks` reuses the first four supplied catalog entries; these are not performance recommendations.
-- `Dashboard.tsx`: disconnected call to connect, IMD balance, known stock count, ERC-20 holdings, CSV export and paginated purchase events. Empty, partial-read, error and loading states never substitute fabricated balances.
-- `components.tsx`: `StockMark`, `ExternalLink`, `AddressDisplay` and `Modal`. The modal uses native focus containment, Escape and return-to-trigger focus. Busy signing/confirmation prevents accidental dismissal. Address copying reports a fallback when Clipboard API access fails.
+- `Dashboard.tsx`: disconnected call to connect, IMD balance, known stock count, ERC-20 holdings, CSV export and paginated purchase events. Empty, partial-read, error and loading states never substitute fabricated balances: the empty state appears only after a completed read with no owned tokens, a failed read shows “Stock balances unavailable. Refresh to retry.” with a retry control, and summary counts read “Unavailable” when their request failed rather than staying on “Loading…”.
+- `components.tsx`: `StockMark`, `ExternalLink`, `AddressDisplay` and `Modal`. The modal uses native focus containment, Escape and return-to-trigger focus. Busy signing/confirmation prevents accidental dismissal. Address copying reports a fallback when Clipboard API access fails, and copied feedback is keyed to the address it was produced for, so a newly displayed address starts uncopied.
 - `hooks.ts`: EIP-6963 discovery with an injected-provider fallback, wallet account/chain event handling, local watchlists and recurring verified contract reads. These hooks own state; the CSS does not imply live data on its own.
 
 Primary actions use `.primary-button`, secondary actions `.secondary-button`, quiet utilities `.text-button`, and named icon actions `.icon-button`. Most compact targets are 36px; major actions are 46–48px high. The measured controls meet the probe's 24px-or-spacing threshold, but many compact controls are below its optional 44px comfort target.

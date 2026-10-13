@@ -33,6 +33,7 @@ export function Dashboard({
   const [activity, setActivity] = useState<Activity>();
   const [balance, setBalance] = useState<bigint>();
   const [error, setError] = useState("");
+  const [holdingsError, setHoldingsError] = useState("");
   const [activityError, setActivityError] = useState("");
   const [loading, setLoading] = useState(false);
   const [more, setMore] = useState(false);
@@ -43,6 +44,7 @@ export function Dashboard({
     setActivity(undefined);
     setBalance(undefined);
     setError("");
+    setHoldingsError("");
     setActivityError("");
     if (!account) return;
     setLoading(true);
@@ -51,7 +53,7 @@ export function Dashboard({
         if (active) setHoldings(v);
       })
       .catch((e) => {
-        if (active) setError(errorMessage(e));
+        if (active) setHoldingsError(errorMessage(e));
       });
     const history = loadActivity(account)
       .then((v) => {
@@ -177,23 +179,40 @@ export function Dashboard({
           <strong>
             {balance !== undefined && snapshot?.decimals !== undefined
               ? displayUnits(balance, snapshot.decimals, 4)
-              : "Unavailable"}
+              : loading && !error
+                ? "Loading…"
+                : "Unavailable"}
           </strong>
         </div>
         <div>
           <span className="muted">Stocks held</span>
           <strong>
-            {owned ? `${owned.length}${failures ? " known" : ""}` : "Loading…"}
+            {owned
+              ? `${owned.length}${failures ? " known" : ""}`
+              : holdingsError
+                ? "Unavailable"
+                : "Loading…"}
           </strong>
         </div>
         <div>
           <span className="muted">Purchases in loaded history</span>
-          <strong>{activity?.events.length ?? "Loading…"}</strong>
+          <strong>
+            {activity
+              ? activity.events.length
+              : activityError
+                ? "Unavailable"
+                : "Loading…"}
+          </strong>
         </div>
       </div>
       {error && (
         <p className="inline-error" role="alert">
           {error}
+        </p>
+      )}
+      {holdingsError && (
+        <p className="inline-error" role="alert">
+          {holdingsError}
         </p>
       )}
       {failures > 0 && (
@@ -215,7 +234,7 @@ export function Dashboard({
             Export CSV
           </button>
         </div>
-        {loading && !holdings ? (
+        {!holdings && !holdingsError ? (
           <p role="status" className="loading-state">
             Reading token balances from Ethereum…
           </p>
@@ -249,7 +268,8 @@ export function Dashboard({
               );
             })}
           </div>
-        ) : (
+        ) : holdings ? (
+          // Only a completed read with no owned tokens is an empty portfolio.
           <div className="empty-state">
             <Layers3 size={28} />
             <h3>No stock balances found</h3>
@@ -260,6 +280,21 @@ export function Dashboard({
             >
               Explore stocks
               <ArrowRight size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="empty-state" role="status">
+            <h3>Stock balances unavailable. Refresh to retry.</h3>
+            <p>
+              The balance read did not complete, so no holdings are shown.
+            </p>
+            <button
+              className="secondary-button"
+              disabled={loading}
+              onClick={() => setTick((t) => t + 1)}
+            >
+              <RefreshCw size={16} />
+              Retry balances
             </button>
           </div>
         )}

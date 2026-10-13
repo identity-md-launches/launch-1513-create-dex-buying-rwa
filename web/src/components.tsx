@@ -49,15 +49,20 @@ export function AddressDisplay({
   address: string;
   label?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
+  // Feedback is keyed to the address it was produced for, so a prop change shows the new address uncopied.
+  const [copiedFor, setCopiedFor] = useState<string>();
+  const [errorFor, setErrorFor] = useState<string>();
+  const copied = copiedFor === address;
+  const error =
+    errorFor === address ? "Copy unavailable. Select the address to copy it." : "";
   async function copy() {
     try {
       await navigator.clipboard.writeText(address);
-      setCopied(true);
-      setError("");
+      setCopiedFor(address);
+      setErrorFor(undefined);
     } catch {
-      setError("Copy unavailable. Select the address to copy it.");
+      setCopiedFor(undefined);
+      setErrorFor(address);
     }
   }
   return (
