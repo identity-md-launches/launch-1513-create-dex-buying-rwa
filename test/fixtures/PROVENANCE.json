@@ -1,0 +1,47 @@
+[
+  {
+    "package": "@uniswap/v3-core",
+    "version": "1.0.1",
+    "gitHead": "ed88be38ab2032d82bf10ac6f8d03aa631889d48",
+    "tarball": "https://registry.npmjs.org/@uniswap/v3-core/-/v3-core-1.0.1.tgz",
+    "tarball_sha256": "141b001e2a376fff867cb24e0713b2834095cb1250c13aae263d9a646446d329",
+    "artifacts": [
+      {
+        "path": "package/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json",
+        "artifact_sha256": "599479f60ebb056804aff7b2d05bdd0830ddbb1fdfaa0b6c62c02294ca7188b0",
+        "bytecode_sha256": "62013628a11b8fa975d023551100c633363a6380a820476e86f6ceb1aeb08b1e"
+      }
+    ],
+    "corresponding_source": {
+      "path": "test/fixtures/upstream/v3-core-sources.tar.gz",
+      "upstream": "https://codeload.github.com/Uniswap/v3-core/tar.gz/ed88be38ab2032d82bf10ac6f8d03aa631889d48",
+      "source_archive_sha256": "ca27ac88b1ddb7e9f800740f7c6dcd7e6d8f9445253c5219bca3a17012d87fe6",
+      "files": 69
+    }
+  },
+  {
+    "package": "@uniswap/v3-periphery",
+    "version": "1.4.4",
+    "gitHead": "697c2474757ea89fec12a4e6db16a574fe259610",
+    "tarball": "https://registry.npmjs.org/@uniswap/v3-periphery/-/v3-periphery-1.4.4.tgz",
+    "tarball_sha256": "7177174c4b8c66bd1d61e7c4127ee15e95f851edfb1a65ee8225b6ab4f818bd7",
+    "artifacts": [
+      {
+        "path": "package/artifacts/contracts/SwapRouter.sol/SwapRouter.json",
+        "artifact_sha256": "c3eb42a951dbe00277660ba47304ed41cf1bde67e98b8a952f7f22c917d6fb02",
+        "bytecode_sha256": "48fc4c6a8dcaa40a6c8eaffaa80813fbdc1f61eeed2820e89c91d9a4c74a6358"
+      },
+      {
+        "path": "package/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json",
+        "artifact_sha256": "9d0b8700b8b144aced9b5dd95bce4a68e03eb9a809eac53ac2e3ce739cc7d289",
+        "bytecode_sha256": "fb92a70bd2439642d17c69cf7bc0a532f0d19aa2fc9773da7c3764c8bf4e6e16"
+      }
+    ],
+    "corresponding_source": {
+      "path": "test/fixtures/upstream/v3-periphery-sources.tar.gz",
+      "upstream": "https://codeload.github.com/Uniswap/v3-periphery/tar.gz/697c2474757ea89fec12a4e6db16a574fe259610",
+      "source_archive_sha256": "26c8c60a683c0fc9cdab44ea0d9012b5ec676b729b0346a1f9c52f83ece28029",
+      "files": 81
+    }
+  }
+]
