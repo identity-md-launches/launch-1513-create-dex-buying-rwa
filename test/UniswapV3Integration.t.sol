@@ -211,6 +211,93 @@ contract UniswapV3IntegrationTest is Test {
         assertEq(dex.buyStock(address(thin), 0.001 ether, quoted, block.timestamp, version), quoted);
     }
 
+    /// @dev MAX_HOPS route IMD -> A -> B -> C -> STOCK on real bytecode: settles with no residue anywhere.
+    function test_realFourHopMaximumRoute() public {
+        (MockToken a, MockToken b, MockToken c) = _fourHopTokens();
+        _createPool(address(imd), address(a));
+        _createPool(address(a), address(b));
+        _createPool(address(b), address(c));
+        _createPool(address(c), address(stock));
+        _listFourHop(a, b, c, address(stock));
+
+        uint256 supplyBefore = imd.totalSupply();
+        (uint256 quoted, IMDStockDex.FeeBreakdown memory fees, uint256 version) =
+            dex.quoteBuy(address(stock), 1000 ether);
+        // Four 0.3% LP fees plus the 0.5% application fee and price impact.
+        assertGt(quoted, 975 ether);
+        assertLt(quoted, 984 ether);
+        vm.prank(buyer);
+        assertEq(dex.buyStock(address(stock), 1000 ether, quoted, block.timestamp, version), quoted);
+        assertEq(stock.balanceOf(buyer), quoted);
+        assertEq(imd.balanceOf(buyer), 100_000 ether - 1000 ether);
+        assertEq(imd.balanceOf(creator), fees.creatorAmount);
+        assertEq(supplyBefore - imd.totalSupply(), fees.burnAmount);
+        assertEq(imd.balanceOf(address(dex)), 0);
+        assertEq(a.balanceOf(address(dex)), 0);
+        assertEq(b.balanceOf(address(dex)), 0);
+        assertEq(c.balanceOf(address(dex)), 0);
+        assertEq(stock.balanceOf(address(dex)), 0);
+        assertEq(imd.allowance(address(dex), router), 0);
+    }
+
+    /// @dev Exhausted liquidity at the last of four hops. The quote refuses it, and a buyer whose minimum
+    ///      reflects a realistic price is protected by the router's slippage check; nothing is charged.
+    ///      With a loose minimum the purchase succeeds as a partial fill: see .imd-findings.json.
+    function test_realFourHopExhaustedLastHopQuoteRefusedAndMinimumProtects() public {
+        (MockToken a, MockToken b, MockToken c) = _fourHopTokens();
+        MockToken thin = new MockToken("THIN", 18);
+        thin.mint(address(this), 1e28);
+        _createPool(address(imd), address(a));
+        _createPool(address(a), address(b));
+        _createPool(address(b), address(c));
+        _createPoolWithLiquidity(address(c), address(thin), 1e18, -60, 60);
+        _listFourHop(a, b, c, address(thin));
+        uint256 version = dex.configVersion();
+        uint256 supplyBefore = imd.totalSupply();
+
+        vm.expectRevert(IMDStockDex.InsufficientLiquidity.selector);
+        dex.quoteBuy(address(thin), 1000 ether);
+        vm.prank(buyer);
+        vm.expectRevert(bytes("Too little received"));
+        dex.buyStock(address(thin), 1000 ether, 900 ether, block.timestamp, version);
+        assertEq(imd.balanceOf(buyer), 100_000 ether);
+        assertEq(imd.totalSupply(), supplyBefore);
+        assertEq(imd.balanceOf(creator), 0);
+        assertEq(thin.balanceOf(buyer), 0);
+        assertEq(c.balanceOf(router), 0);
+        assertEq(imd.allowance(address(dex), router), 0);
+    }
+
+    function _fourHopTokens() private returns (MockToken a, MockToken b, MockToken c) {
+        a = new MockToken("A", 18);
+        b = new MockToken("B", 18);
+        c = new MockToken("C", 18);
+        a.mint(address(this), 1e28);
+        b.mint(address(this), 1e28);
+        c.mint(address(this), 1e28);
+    }
+
+    function _listFourHop(MockToken a, MockToken b, MockToken c, address target) private {
+        vm.startPrank(owner);
+        dex.pause();
+        dex.setMarket(
+            target,
+            abi.encodePacked(
+                address(imd),
+                uint24(3000),
+                address(a),
+                uint24(3000),
+                address(b),
+                uint24(3000),
+                address(c),
+                uint24(3000),
+                target
+            )
+        );
+        dex.unpause();
+        vm.stopPrank();
+    }
+
     function test_realRouterAndQuoterRejectedAsCreator() public {
         vm.startPrank(owner);
         dex.pause();
