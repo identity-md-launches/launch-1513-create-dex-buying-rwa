@@ -1,0 +1,13 @@
+{
+  "name": "IMDStockDex",
+  "address": "0xf66c6c7a09e741843d4ede8795ac4267e3823037",
+  "txHash": "0xf949886c0c836ae25a4eac0c7e8d98767091ec71da6f42ea04bfa408a96c7e21",
+  "blockNumber": 26181764,
+  "creationCodeHash": "cd09b3e657ef735c84d9da4bfbf51aab7725eb50911548dc650bc505234f3e07",
+  "abiHash": "f6010972b0d0d9921d0fa669a45d5cf65fa77fea787747255a5d70df92e3ae75",
+  "sourceCommit": "7933edf6f604a63d8b4de3f6c4455bfecbe3f87d",
+  "chainId": 1,
+  "runtimeHash": "0x746cd8aacdef39b53cd5eb110af6c5ae6a630ab9b17adc1d650ca04f3aa25344",
+  "rpcUrls": ["https://ethereum-rpc.publicnode.com", "https://eth.drpc.org"],
+  "explorer": "https://etherscan.io"
+}

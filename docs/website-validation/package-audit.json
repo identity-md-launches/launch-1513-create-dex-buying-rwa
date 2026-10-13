@@ -1,0 +1,54 @@
+{
+  "scope": "Complete materialized submission file set: tracked project plus new non-ignored deliverables; assignment inputs and scratch are excluded.",
+  "limitBytes": 8388608,
+  "files": 115,
+  "fileBytes": 2704771,
+  "productionExportBytes": 647575,
+  "largestFiles": [
+    {
+      "path": "lib/forge-std/src/safeconsole.sol",
+      "bytes": 427535
+    },
+    {
+      "path": "dist/assets/ethereum-CVpAOL6j.js",
+      "bytes": 261227
+    },
+    {
+      "path": "dist/assets/index-DkIa7bCT.js",
+      "bytes": 258238
+    },
+    {
+      "path": "test/fixtures/upstream/v3-core-sources.tar.gz",
+      "bytes": 203159
+    },
+    {
+      "path": "docs/website-validation/desktop-1440.png",
+      "bytes": 138480
+    },
+    {
+      "path": "test/fixtures/upstream/v3-periphery-sources.tar.gz",
+      "bytes": 129256
+    },
+    {
+      "path": "lib/forge-std/src/Vm.sol",
+      "bytes": 126299
+    },
+    {
+      "path": "lib/forge-std/src/console.sol",
+      "bytes": 69110
+    }
+  ],
+  "changedExistingPaths": [
+    "README.md",
+    "THIRD_PARTY.md"
+  ],
+  "prohibitedChanges": [],
+  "generatedDependencyOrCachePaths": [],
+  "symlinks": [],
+  "submodules": [],
+  "requiredMetadataAndRelativeAssets": true,
+  "gitBundleMeasurement": "Direct git bundle creation cannot complete in this read-only partial-clone object store: Git attempted to fetch a missing object into .git/objects/pack and was denied. No existing Git metadata was modified. Full materialized file bytes and a separate compressed submission archive are measured instead.",
+  "metadataReserveBytes": 1048576,
+  "bytesWithMetadataReserve": 3753347,
+  "underLimitWithReserve": true
+}

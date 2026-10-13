@@ -1,0 +1,18 @@
+{
+  "chainId": 1,
+  "sourceCommit": "7933edf6f604a63d8b4de3f6c4455bfecbe3f87d",
+  "address": "0xf66c6c7a09e741843d4ede8795ac4267e3823037",
+  "abiHash": "0xf6010972b0d0d9921d0fa669a45d5cf65fa77fea787747255a5d70df92e3ae75",
+  "runtimeHash": "0x746cd8aacdef39b53cd5eb110af6c5ae6a630ab9b17adc1d650ca04f3aa25344",
+  "checkedAt": "2026-10-13T10:28:43.446Z",
+  "block": "26182972",
+  "state": {
+    "paused": "false",
+    "configVersion": "10",
+    "imd": "0xD34a99Bc0f67aE1bbd63C660e6d0b0dd03E263B7",
+    "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+    "quoter": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+    "creator": "0xA82B930352712AD04De22c16114C12BB54B66E59",
+    "burnShareBps": "3000"
+  }
+}

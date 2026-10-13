@@ -1,0 +1,81 @@
+{
+  "engine": "webkit",
+  "tests": [
+    {
+      "name": "Catalog search, sector filters, paging, watchlist persistence, selection",
+      "passed": true,
+      "ms": 2099
+    },
+    {
+      "name": "No-wallet dialog, Escape, focus return, keyboard sequence",
+      "passed": true,
+      "ms": 1527
+    },
+    {
+      "name": "Wrong chain, switch, wallet rejection and account change",
+      "passed": true,
+      "ms": 1849
+    },
+    {
+      "name": "Exact approval followed by reviewed purchase with version, minimum, deadline",
+      "passed": true,
+      "ms": 3055
+    },
+    {
+      "name": "Existing approval reset and transaction rejection recovery",
+      "passed": true,
+      "ms": 2942
+    },
+    {
+      "name": "Amount validation, maximum balance, slippage, expired quote requires refresh",
+      "passed": true,
+      "ms": 3125
+    },
+    {
+      "name": "Configuration changes invalidate reviewed quotes and update routes automatically",
+      "passed": true,
+      "ms": 2308
+    },
+    {
+      "name": "Portfolio balances, onchain empty history, CSV download",
+      "passed": true,
+      "ms": 1788
+    },
+    {
+      "name": "Failed transaction never shows purchase success",
+      "passed": true,
+      "ms": 2023
+    },
+    {
+      "name": "Cancelled or unrelated receipt never reports successful action",
+      "passed": true,
+      "ms": 2032
+    },
+    {
+      "name": "Offline recovery and mismatched runtime fail closed",
+      "passed": true,
+      "ms": 3005
+    },
+    {
+      "name": "Paused, unconfigured and absent-quoter states block purchase",
+      "passed": true,
+      "ms": 1421
+    },
+    {
+      "name": "Automatic and manual quote renewal; old request cannot overwrite edited amount",
+      "passed": true,
+      "ms": 4482
+    },
+    {
+      "name": "Pending transaction survives reload and is checked without resubmission",
+      "passed": true,
+      "ms": 2331
+    },
+    {
+      "name": "Reflow at 320, 390, 768, 1024, 1440; first mobile action; reduced motion",
+      "passed": true,
+      "ms": 1556
+    }
+  ],
+  "mode": "Production export at /preview/ with intercepted RPC and an injected test-only wallet. No real transactions sent."
+}

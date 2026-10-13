@@ -1,0 +1,32 @@
+[
+  {
+    "screen": "markets",
+    "passes": 31,
+    "incomplete": 0,
+    "violations": []
+  },
+  {
+    "screen": "portfolio",
+    "passes": 18,
+    "incomplete": 0,
+    "violations": []
+  },
+  {
+    "screen": "watchlist",
+    "passes": 30,
+    "incomplete": 1,
+    "violations": []
+  },
+  {
+    "screen": "wallet",
+    "passes": 15,
+    "incomplete": 1,
+    "violations": []
+  },
+  {
+    "screen": "help",
+    "passes": 18,
+    "incomplete": 0,
+    "violations": []
+  }
+]

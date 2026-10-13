@@ -2,7 +2,49 @@
 
 `IMDStockDex` buys existing, owner-listed tokenized stocks using **IMD only**, through the original **Uniswap v3 SwapRouter**. Each successful purchase through the DEX charges a fixed **0.5% application fee** in IMD. The configured portion is burned by reducing IMD's supply; the rest is transferred to the configured creator in the same transaction. Purchased stocks go directly to the buyer.
 
-This is a contracts-only Ethereum application. It does not issue stock tokens, create liquidity pools, or implement a sell/redemption flow. Uniswap supplies execution prices and liquidity. Listing a token does not establish its issuer, backing, or redemption rights.
+This repository contains the Ethereum contracts and a static, wallet-connected website. It does not issue stock tokens, create liquidity pools, or implement a sell/redemption flow. Uniswap supplies execution prices and liquidity. Listing a token does not establish its issuer, backing, or redemption rights.
+
+## Website
+
+The completed site is in **`dist/`** and the React/TypeScript source, frontend manifest and npm lockfile are in **`web/`**. Serve `dist/` as ordinary static files; no backend, environment file, API key or private key is needed. Vite uses `base: './'`, and navigation uses hashes, so the export works at a gateway subpath without server rewrites.
+
+Use Node.js **22.18+ or 24+** and npm. From the repository root:
+
+```sh
+npm ci --prefix web
+npm --prefix web run typecheck
+npm --prefix web run build
+npm --prefix web run preview
+```
+
+The preview command prints its local URL. For development, use `npm --prefix web run dev`. Rebuilding replaces `dist/`; publish the complete directory, including `assets/`, `favicon.svg`, `social.png` and `licenses.txt`. `web/artwork/social.svg` is the editable source of the included 1200×630 share image. Dependency directories and caches are local build tools and are not part of the delivery.
+
+### Trading and portfolio
+
+- All 50 supplied symbols, names and Ethereum token addresses are included, with search, sector and availability filters, sorting and pagination. Watchlists are saved on the current device.
+- The site reads `IMDStockDex` at `0xf66c6c7a09e741843d4ede8795ac4267e3823037` on Ethereum mainnet. It discovers IMD, router, quoter, creator, fee split and stock routes from the contract. It does not deploy or initialize contracts.
+- Wallet connection supports EIP-6963 browser wallets and legacy injected EIP-1193 wallets. Mobile visitors can use a wallet's built-in browser. A wrong-network state offers an explicit switch to Ethereum. No WalletConnect relay or QR connector is included. Discovery follows the [EIP-6963 provider announcement protocol](https://eips.ethereum.org/EIPS/eip-6963).
+- Quotes use `quoteBuy` through `eth_call`. Configuration, markets and reference prices refresh every 30 seconds while visible and when the tab becomes visible again. Changed `configVersion` values invalidate earlier quotes. Auto route means using the owner's configured Uniswap v3 path, not searching unrelated venues.
+- Table prices are **IMD per stock token for a 1,000 IMD buy**, including the DEX fee. They are not USD stock-exchange prices, NAV or guaranteed execution prices. Unlisted or unquotable stocks show unavailable prices. At the recorded live check, version 10 was unpaused and only NVIDIA had an enabled route among the supplied 50 stocks.
+- A purchase requires a fresh quote, a positive minimum output, an unchanged version, the connected Ethereum account and enough IMD. Approval is for the exact gross input; a nonzero insufficient allowance is reset first. Approval and purchase require separate wallet confirmations. Purchases are simulated before sending, using [viem's simulation/write flow](https://viem.sh/docs/contract/simulateContract), a default 0.5% slippage tolerance and a five-minute deadline.
+- Pending hashes survive reload in local storage. Confirmation checks receipt status and the expected onchain event; an unrelated replacement is not reported as a purchase. If confirmation times out, check the existing transaction instead of submitting another.
+- Portfolio reads balances of these 50 tokens and IMD. CSV includes every catalog balance with explicit failures. Purchase activity covers the latest 20,000 blocks initially, in 2,000-block RPC chunks, with an action to load older ranges. It includes DEX purchases, not all transfers or a fabricated portfolio valuation.
+
+### Verification and limitations
+
+The production build and `tsc --noEmit` passed. A clean `npm ci` from the delivered lockfile also passed. The production export was served at `/preview/` and tested in Chromium and WebKit: **15 interaction scenarios passed in each engine**. The pinned taste probe passed **16/16 checks** at 320, 390 and 1440px. Axe reported zero detected violations in Markets, disconnected Portfolio, Watchlist, the no-wallet dialog and Help. Browser inspection also covered 768 and 1024px, keyboard focus, live Ethereum reads, reduced motion, 200% text enlargement, RTL reflow, local asset loading and console errors.
+
+These are worker-run checks, not an independent certification. Transaction tests used an intercepted RPC and a test-only injected wallet; **no real mainnet transaction was signed or sent**. External wallet extensions, hardware wallets, physical iPhones, a screen reader and browser-native zoom were not tested. Public RPC availability and issuer restrictions remain external dependencies. The unfurl image uses a relative URL because hosting is assigned after delivery; crawlers that insist on an absolute `og:image` URL may need the final host to expand it.
+
+See [VALIDATION.md](VALIDATION.md) for commands, findings, fixes and coverage, [DESIGN.md](DESIGN.md) for the implemented design system, and [saved evidence](docs/website-validation/) for machine-readable results and screenshots.
+
+To independently compare the frontend ABI and live runtime with the pinned Solidity source, with Foundry installed:
+
+```sh
+npm --prefix web run verify:contracts
+```
+
+The verifier hashes recursively key-sorted ABI JSON without reordering arrays and compares it to the supplied `abiHash`. It also compares the compiled runtime hash with the pinned frontend hash and Ethereum bytecode. This command is read-only onchain. It needs the supplied public Ethereum RPC to be available. The static site's ordinary build does not require Foundry or network reads.
 
 ## Scope of the fee
 
