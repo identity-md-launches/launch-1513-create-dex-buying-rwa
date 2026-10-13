@@ -1,0 +1,10 @@
+{
+  "kind": "evm_contracts",
+  "contracts": [
+    {
+      "contract": "IMDStockDex",
+      "constructorArgs": ["$owner"]
+    }
+  ],
+  "notes": "IMDStockDex deploys with the explicit launch owner and starts paused and unconfigured. The accepted implementation leaves the canonical burn-compatible IMD address, original Uniswap v3 SwapRouter, optional QuoterV2, creator recipient, burn share, and stock routes to owner-controlled configuration. IMD can be selected only once. Trading requires configuration and owner unpausing; this manifest supplies no initialization calls or assumed external addresses or fee split. Purchases spend only configured IMD and deliver owner-listed stock tokens directly to the buyer through Uniswap v3. The fixed application fee is 0.5% of gross IMD, rounded up in base units. The owner selects a burn share of 1-9999 basis points of that fee; the burn portion rounds down and the creator receives the remainder. Both portions must be positive, and failed swaps, burns or transfers revert the purchase. Burns verify the corresponding reduction in IMD total supply. Uniswap supplies indicative quotes and execution prices; its pool fees and price impact are additional. The owner must verify external contract identities, stock authenticity, transfer compatibility and route liquidity before enabling trading."
+}
