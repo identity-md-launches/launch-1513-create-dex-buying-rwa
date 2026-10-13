@@ -7,6 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IMDStockDex} from "../src/IMDStockDex.sol";
 import {DexTestBase} from "./helpers/DexTestBase.sol";
 import {MockToken} from "./mocks/MockTokens.sol";
+import {MockVenue} from "./mocks/MockVenue.sol";
 
 contract ConstructorFactory {
     function deploy(address owner) external returns (IMDStockDex) {
@@ -195,6 +196,52 @@ contract ConfigurationTest is DexTestBase {
         vm.expectRevert(IMDStockDex.InvalidSplit.selector);
         dex.setFeeDistribution(creator, type(uint16).max);
         vm.stopPrank();
+    }
+
+    function test_creatorCanNeverBeTheRouterOrQuoter() public {
+        MockVenue other = new MockVenue();
+        vm.startPrank(owner);
+        dex.pause();
+        // The configured router and quoter are rejected as creator, mirroring setIMD's guards.
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setFeeDistribution(address(venue), 5000);
+        dex.setQuoter(address(other));
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setFeeDistribution(address(other), 5000);
+        // And the current creator is rejected as router or quoter.
+        dex.setQuoter(address(venue));
+        dex.setFeeDistribution(address(other), 5000);
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setRouter(address(other));
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setQuoter(address(other));
+        vm.stopPrank();
+        assertEq(dex.creator(), address(other));
+        assertEq(address(dex.router()), address(venue));
+        assertEq(address(dex.quoter()), address(venue));
+    }
+
+    function test_quoteRejectsMissingOrExhaustedHopPrices() public {
+        uint160 minLimit = 4295128739 + 1;
+        uint160 maxLimit = 1461446703485210103287273052203988822378723970342 - 1;
+        venue.setQuoteMetadata(0, uint160(1 << 96));
+        vm.expectRevert(IMDStockDex.InvalidQuote.selector);
+        dex.quoteBuy(address(stock), GROSS);
+        venue.setQuoteMetadata(2, uint160(1 << 96));
+        vm.expectRevert(IMDStockDex.InvalidQuote.selector);
+        dex.quoteBuy(address(stock), GROSS);
+        venue.setQuoteMetadata(type(uint256).max, minLimit);
+        vm.expectRevert(IMDStockDex.InsufficientLiquidity.selector);
+        dex.quoteBuy(address(stock), GROSS);
+        venue.setQuoteMetadata(type(uint256).max, maxLimit);
+        vm.expectRevert(IMDStockDex.InsufficientLiquidity.selector);
+        dex.quoteBuy(address(stock), GROSS);
+        venue.setQuoteMetadata(type(uint256).max, minLimit + 1);
+        (uint256 out,,) = dex.quoteBuy(address(stock), GROSS);
+        assertEq(out, 1990 ether);
+        venue.setQuoteMetadata(type(uint256).max, maxLimit - 1);
+        (out,,) = dex.quoteBuy(address(stock), GROSS);
+        assertEq(out, 1990 ether);
     }
 
     function test_malformedPathsAndInvalidStocksRejected() public {

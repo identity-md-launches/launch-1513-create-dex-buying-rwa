@@ -14,6 +14,9 @@ import {IUniswapV3Router, IUniswapV3Quoter} from "./interfaces/IUniswapV3.sol";
 /// @notice Buy owner-listed tokenized stocks with IMD through Uniswap v3. The 50 bps fee is
 ///         split between a verifiable supply-reducing burn and the configured creator, atomically.
 /// @dev No token issuance, price oracle, inventory, user deposits, or arbitrary router calldata.
+///      The fee applies to purchases made through this contract. Listed stocks are third-party
+///      tokens on public Uniswap pools, which this contract neither owns nor gates, so a buyer who
+///      swaps on the pool directly pays Uniswap's fee but not this one. See the README.
 contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -21,6 +24,9 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_HOPS = 4;
     uint256 private constant FEE_DIVISOR = BPS / FEE_BPS;
+    /// @dev Uniswap v3 TickMath bounds. A quoted hop that ends at a bound ran out of liquidity.
+    uint160 private constant MIN_SQRT_RATIO = 4295128739;
+    uint160 private constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
     IERC20 public imd;
     IUniswapV3Router public router;
@@ -59,6 +65,8 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
     error InsufficientOutput(uint256 received, uint256 minimum);
     error InvalidBurn();
     error RenounceDisabled();
+    error InvalidQuote();
+    error InsufficientLiquidity();
 
     event IMDConfigured(address indexed token);
     event RouterConfigured(address indexed router);
@@ -102,7 +110,9 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
 
     function setRouter(address newRouter) external nonReentrant onlyOwner whenPaused {
         _requireContract(newRouter);
-        if (newRouter == address(this) || newRouter == address(imd)) revert InvalidAddress();
+        if (newRouter == address(this) || newRouter == address(imd) || newRouter == creator) {
+            revert InvalidAddress();
+        }
         router = IUniswapV3Router(newRouter);
         _bumpVersion();
         emit RouterConfigured(newRouter);
@@ -110,20 +120,27 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
 
     function setQuoter(address newQuoter) external nonReentrant onlyOwner whenPaused {
         _requireContract(newQuoter);
-        if (newQuoter == address(this) || newQuoter == address(imd)) revert InvalidAddress();
+        if (newQuoter == address(this) || newQuoter == address(imd) || newQuoter == creator) {
+            revert InvalidAddress();
+        }
         quoter = IUniswapV3Quoter(newQuoter);
         _bumpVersion();
         emit QuoterConfigured(newQuoter);
     }
 
     /// @notice Shares are of the 0.5% fee, not of the purchase. Both beneficiaries must have a share.
+    /// @dev The creator is paid by push, so it can never be the router or quoter: the original
+    ///      SwapRouter exposes a permissionless sweepToken, which would let anyone take the share.
     function setFeeDistribution(address newCreator, uint16 newBurnShareBps)
         external
         nonReentrant
         onlyOwner
         whenPaused
     {
-        if (newCreator == address(0) || newCreator == address(this) || newCreator == address(imd)) {
+        if (
+            newCreator == address(0) || newCreator == address(this) || newCreator == address(imd)
+                || newCreator == address(router) || newCreator == address(quoter)
+        ) {
             revert InvalidAddress();
         }
         if (newBurnShareBps == 0 || newBurnShareBps >= BPS) revert InvalidSplit();
@@ -183,6 +200,9 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Simulate via eth_call for an indicative stock amount, fees, and a buy configuration version.
     /// @dev A quote is not an oracle or a price guarantee. The buyer must choose minStockOut and deadline.
+    ///      QuoterV2 reports a partial fill (route liquidity exhausted) as a smaller output instead of
+    ///      failing; buyStock would then revert because the router cannot spend the whole net amount.
+    ///      Such quotes revert here with InsufficientLiquidity so they are never shown as executable.
     function quoteBuy(address stock, uint256 grossIMD)
         external
         nonReentrant
@@ -193,7 +213,15 @@ contract IMDStockDex is Ownable2Step, Pausable, ReentrancyGuard {
         bytes memory path = _marketPath(stock);
         fees = previewFees(grossIMD);
         version = configVersion;
-        (stockOut,,,) = quoter.quoteExactInput(path, fees.swapAmount);
+        uint160[] memory sqrtPricesAfter;
+        (stockOut, sqrtPricesAfter,,) = quoter.quoteExactInput(path, fees.swapAmount);
+        if (sqrtPricesAfter.length != (path.length - 20) / 23) revert InvalidQuote();
+        for (uint256 i; i < sqrtPricesAfter.length; ++i) {
+            // A v3 swap loop only stops early at the price limit, which is the tick-math bound.
+            if (sqrtPricesAfter[i] <= MIN_SQRT_RATIO + 1 || sqrtPricesAfter[i] >= MAX_SQRT_RATIO - 1) {
+                revert InsufficientLiquidity();
+            }
+        }
     }
 
     /// @notice Spend the caller's approved IMD and deliver listed stock directly to the caller.

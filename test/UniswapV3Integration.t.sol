@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IMDStockDex} from "../src/IMDStockDex.sol";
+import {IUniswapV3Router} from "../src/interfaces/IUniswapV3.sol";
 import {MockToken} from "./mocks/MockTokens.sol";
 import {UniswapV3FactoryBytecode} from "./fixtures/UniswapV3FactoryBytecode.sol";
 import {SwapRouterBytecode} from "./fixtures/SwapRouterBytecode.sol";
@@ -162,6 +163,91 @@ contract UniswapV3IntegrationTest is Test {
         assertEq(imd.allowance(address(dex), router), 0);
     }
 
+    /// @dev QuoterV2 silently returns the output of a partial fill when a pool runs dry. The DEX must
+    ///      not present that as an executable quote, because buyStock rejects partial spending.
+    function test_realExhaustedLiquidityQuoteRevertsInsteadOfPhantomOutput() public {
+        MockToken thin = new MockToken("THIN", 18);
+        thin.mint(address(this), 1e28);
+        _createPoolWithLiquidity(address(imd), address(thin), 1e18, -60, 60);
+        vm.startPrank(owner);
+        dex.pause();
+        dex.setMarket(address(thin), abi.encodePacked(address(imd), uint24(3000), address(thin)));
+        dex.unpause();
+        vm.stopPrank();
+        uint256 version = dex.configVersion();
+
+        // Both the quote and the purchase fail for an order the pool cannot absorb; nothing is charged.
+        vm.expectRevert(IMDStockDex.InsufficientLiquidity.selector);
+        dex.quoteBuy(address(thin), 1000 ether);
+        vm.prank(buyer);
+        vm.expectRevert(abi.encodeWithSelector(IMDStockDex.UnexpectedTokenBalance.selector, address(imd)));
+        dex.buyStock(address(thin), 1000 ether, 1, block.timestamp, version);
+        assertEq(imd.balanceOf(buyer), 100_000 ether);
+        assertEq(imd.balanceOf(creator), 0);
+
+        // An order inside the available liquidity quotes and executes consistently.
+        (uint256 quoted,,) = dex.quoteBuy(address(thin), 0.001 ether);
+        assertGt(quoted, 0);
+        vm.prank(buyer);
+        assertEq(dex.buyStock(address(thin), 0.001 ether, quoted, block.timestamp, version), quoted);
+    }
+
+    function test_realExhaustedIntermediateHopIsDetected() public {
+        MockToken thin = new MockToken("THIN", 18);
+        thin.mint(address(this), 1e28);
+        _createPoolWithLiquidity(address(bridge), address(thin), 1e18, -60, 60);
+        vm.startPrank(owner);
+        dex.pause();
+        dex.setMarket(
+            address(thin),
+            abi.encodePacked(address(imd), uint24(3000), address(bridge), uint24(3000), address(thin))
+        );
+        dex.unpause();
+        vm.stopPrank();
+        vm.expectRevert(IMDStockDex.InsufficientLiquidity.selector);
+        dex.quoteBuy(address(thin), 1000 ether);
+        (uint256 quoted,, uint256 version) = dex.quoteBuy(address(thin), 0.001 ether);
+        vm.prank(buyer);
+        assertEq(dex.buyStock(address(thin), 0.001 ether, quoted, block.timestamp, version), quoted);
+    }
+
+    function test_realRouterAndQuoterRejectedAsCreator() public {
+        vm.startPrank(owner);
+        dex.pause();
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setFeeDistribution(router, 6000);
+        vm.expectRevert(IMDStockDex.InvalidAddress.selector);
+        dex.setFeeDistribution(quoter, 6000);
+        vm.stopPrank();
+        assertEq(dex.creator(), creator);
+    }
+
+    /// @dev Documents the fee's scope: it is charged on every purchase made through the DEX. The listed
+    ///      pool is a public third-party venue the DEX does not own or gate, so a swap sent to the
+    ///      router directly pays Uniswap's pool fee only. See README "Scope of the fee".
+    function test_feeAppliesToEveryDexPurchaseButNotToDirectPoolSwaps() public {
+        (bytes memory path,) = dex.market(address(stock));
+        address direct = makeAddr("direct pool user");
+        imd.mint(direct, 1000 ether);
+        uint256 supplyBefore = imd.totalSupply();
+        (uint256 quotedViaDex, IMDStockDex.FeeBreakdown memory fees, uint256 version) =
+            dex.quoteBuy(address(stock), 1000 ether);
+        vm.prank(buyer);
+        dex.buyStock(address(stock), 1000 ether, quotedViaDex, block.timestamp, version);
+        assertEq(supplyBefore - imd.totalSupply(), fees.burnAmount);
+        assertEq(imd.balanceOf(creator), fees.creatorAmount);
+
+        vm.startPrank(direct);
+        imd.approve(router, 1000 ether);
+        IUniswapV3Router(router)
+            .exactInput(IUniswapV3Router.ExactInputParams(path, direct, block.timestamp, 1000 ether, 1));
+        vm.stopPrank();
+        // The whole 1000 IMD reached the pool: no application fee, burn, or creator payment occurred.
+        assertEq(imd.balanceOf(direct), 0);
+        assertEq(supplyBefore - imd.totalSupply(), fees.burnAmount);
+        assertEq(imd.balanceOf(creator), fees.creatorAmount);
+    }
+
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata) external {
         require(pools[msg.sender], "unknown fixture pool");
         IERC20(IV3PoolFixture(msg.sender).token0()).transfer(msg.sender, amount0);
@@ -169,10 +255,20 @@ contract UniswapV3IntegrationTest is Test {
     }
 
     function _createPool(address tokenA, address tokenB) private {
+        _createPoolWithLiquidity(tokenA, tokenB, 1e24, -887220, 887220);
+    }
+
+    function _createPoolWithLiquidity(
+        address tokenA,
+        address tokenB,
+        uint128 liquidity,
+        int24 lower,
+        int24 upper
+    ) private {
         address pool = IV3FactoryFixture(factory).createPool(tokenA, tokenB, 3000);
         pools[pool] = true;
         IV3PoolFixture(pool).initialize(uint160(1 << 96));
-        IV3PoolFixture(pool).mint(address(this), -887220, 887220, 1e24, "");
+        IV3PoolFixture(pool).mint(address(this), lower, upper, liquidity, "");
     }
 
     function _deploy(bytes memory initcode) private returns (address deployed) {

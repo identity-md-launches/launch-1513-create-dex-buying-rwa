@@ -18,6 +18,8 @@ contract MockVenue is IUniswapV3Router, IUniswapV3Quoter {
     bytes public callbackData;
     bool public callbackSucceeded;
     bytes public callbackResult;
+    uint256 public quotePriceCount = type(uint256).max; // max: one entry per hop of the quoted path
+    uint160 public quotePriceAfter = uint160(1 << 96);
     uint256 public lastAmountIn;
     uint256 public lastMinimum;
     uint256 public lastDeadline;
@@ -63,7 +65,12 @@ contract MockVenue is IUniswapV3Router, IUniswapV3Quoter {
         return amountOut + reportExtra;
     }
 
-    function quoteExactInput(bytes memory, uint256 amountIn)
+    function setQuoteMetadata(uint256 count, uint160 priceAfter) external {
+        quotePriceCount = count;
+        quotePriceAfter = priceAfter;
+    }
+
+    function quoteExactInput(bytes memory path, uint256 amountIn)
         external
         view
         returns (uint256 amountOut, uint160[] memory prices, uint32[] memory ticks, uint256 gasEstimate)
@@ -71,6 +78,11 @@ contract MockVenue is IUniswapV3Router, IUniswapV3Quoter {
         if (revertSwap) {
             revert VenueFailure();
         }
-        return (amountIn * numerator / denominator, new uint160[](0), new uint32[](0), 100_000);
+        uint256 hops = quotePriceCount == type(uint256).max ? (path.length - 20) / 23 : quotePriceCount;
+        prices = new uint160[](hops);
+        for (uint256 i; i < hops; ++i) {
+            prices[i] = quotePriceAfter;
+        }
+        return (amountIn * numerator / denominator, prices, new uint32[](hops), 100_000);
     }
 }
